@@ -478,7 +478,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Submission Preference</label>
+                        <label>Work Timing Preference</label>
                         <select id="completion">
                             <option>SAME DAY AS DEADLINE</option>
                             <option>1 DAY BEFORE</option>
@@ -504,7 +504,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Communication Preference</label>
+                        <label>Comm. Preference</label>
                         <select id="commPref" onchange="toggleCommOptions()">
                             <option value="In person">IN PERSON</option>
                             <option value="Online video meetings">VIDEO MEETINGS</option>
@@ -577,17 +577,9 @@
         <div class="editorial-panel" style="width:400px; margin: 100px auto;">
             <h2 style="text-align:center; font-weight:900; margin-bottom:20px;">LECTURER LOGIN</h2>
             <label>User</label>
-            <input type="text"
-       id="login-user"
-       placeholder="Enter username"
-       autocomplete="off"
-       style="margin-bottom:15px;">
+            <input type="text" id="login-user" placeholder="Enter username" autocomplete="off" style="margin-bottom:15px;">
             <label>Password</label>
-            <input type="password"
-       id="login-pass"
-       placeholder="Enter password"
-       autocomplete="off"
-       style="margin-bottom:25px;">
+            <input type="password" id="login-pass" placeholder="Enter password" autocomplete="off" style="margin-bottom:25px;">
             <button class="btn-editorial btn-red" style="width:100%;" onclick="handleLogin()">ENTER DASHBOARD</button>
             <p id="login-err" class="hidden" style="color:var(--red); font-weight:900; margin-top:10px;">DENIED.</p>
         </div>
@@ -610,9 +602,9 @@
                     <h1 style="color:white; font-weight:900; margin-bottom:10px;">SYSTEM OVERVIEW</h1>
                     <p style="color: var(--yellow); margin-bottom: 30px; font-weight: 800; font-size: 0.8rem; text-transform: uppercase;">Student team selections are treated as preferences: final approval remains with the lecturer.</p>
                     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:20px;">
-                        <div class="stat-card"><div class="stat-num" id="count-responses">142</div><div style="font-weight:900;">RESPONSES</div></div>
-                        <div class="stat-card"><div class="stat-num">35</div><div style="font-weight:900;">TEAMS</div></div>
-                        <div class="stat-card" style="background:var(--red); color:white;"><div class="stat-num" style="color:white;">03</div><div style="font-weight:900;">RISK ALERTS</div></div>
+                        <div class="stat-card"><div class="stat-num" id="count-responses">0</div><div style="font-weight:900;">RESPONSES</div></div>
+                        <div class="stat-card"><div class="stat-num" id="count-selected-teams">0</div><div style="font-weight:900;">TEAMS SELECTED</div></div>
+                        <div class="stat-card" style="background:var(--red); color:white;"><div class="stat-num" id="count-unique-majors" style="color:white;">0</div><div style="font-weight:900;">UNIQUE MAJORS</div></div>
                     </div>
                 </div>
 
@@ -632,7 +624,7 @@
                     <div class="table-container">
                         <table id="responses-table">
                             <thead>
-                                <tr><th>Name</th><th>Major</th><th>Selected Team</th><th>Skills</th><th>Work timing</th><th>Action</th></tr>
+                                <tr><th>Name</th><th>Student ID</th><th>Major</th><th>Selected Team</th><th>Skills</th><th>Roles</th><th>Work timing</th><th>Communication</th><th>Action</th></tr>
                             </thead>
                             <tbody id="responses-body"></tbody>
                         </table>
@@ -658,15 +650,79 @@
         </div>
     </section>
 
+    <!-- STUDENT RESPONSE MODAL -->
+    <div id="response-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:3000; display:flex; align-items:center; justify-content:center; padding:20px;">
+        <div class="editorial-panel" style="max-width:760px; width:100%; max-height:85vh; overflow-y:auto; background:var(--yellow);">
+            <div style="display:flex; justify-content:space-between; gap:20px; align-items:center; border-bottom:4px solid var(--black); padding-bottom:12px; margin-bottom:20px;">
+                <h2 style="font-weight:900; text-transform:uppercase;">Student Response</h2>
+                <button class="btn-editorial btn-red" style="padding:8px 14px; font-size:0.75rem;" onclick="closeResponseModal()">CLOSE</button>
+            </div>
+            <div id="response-modal-content" style="font-weight:800; line-height:1.7;"></div>
+        </div>
+    </div>
+
+
     <script>
         // --- DATA ---
-        let studentResponses = [
-let studentResponses = JSON.parse(localStorage.getItem("cliqueResponses")) || [];
-
-function saveResponses() {
-    localStorage.setItem("cliqueResponses", JSON.stringify(studentResponses));
-}
+        const demoStudentResponses = [
+            {
+                name: 'SARAH MILLER', sid: 'S4012456', major: 'SOFTWARE ENGINEERING', selectedTeam: 'Team 1',
+                skills: 'Coding, UI Design, Testing', roles: 'Developer or coder, Quality checker', completion: '1 WEEK BEFORE',
+                availability: 'Monday Morning, Wednesday Afternoon, Friday Evening', communication: 'Online video meetings', platform: 'Zoom', consent: 'Yes'
+            },
+            {
+                name: 'JAMES TAN', sid: 'S4098712', major: 'BUSINESS', selectedTeam: 'Team 2',
+                skills: 'Leadership, Project Planning, Presentation', roles: 'Project manager, Presentation lead', completion: '3 DAYS BEFORE',
+                availability: 'Tuesday Afternoon, Thursday Afternoon, Saturday Morning', communication: 'Through text messages', platform: 'Microsoft Teams chat', consent: 'Yes'
+            },
+            {
+                name: 'EMILY CHEN', sid: 'S4076321', major: 'DATA SCIENCE', selectedTeam: 'Team 1',
+                skills: 'Data Analysis, Research, Critical thinking', roles: 'Data analyst, Research lead', completion: '3 DAYS BEFORE',
+                availability: 'Monday Evening, Wednesday Evening, Sunday Afternoon', communication: 'Online video meetings', platform: 'Google Meet', consent: 'Yes'
+            },
+            {
+                name: 'MICHAEL ROSS', sid: 'S4058890', major: 'ANIMATION', selectedTeam: 'Random',
+                skills: 'Creative design, Visual design, Prototyping', roles: 'Design lead, Visual design lead', completion: '1 DAY BEFORE',
+                availability: 'Friday Afternoon, Saturday Afternoon, Sunday Evening', communication: 'Through text messages', platform: 'Discord', consent: 'Yes'
+            }
         ];
+
+        function loadResponses() {
+            const stored = localStorage.getItem('cliqueResponses');
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    return Array.isArray(parsed) ? parsed : demoStudentResponses.slice();
+                } catch (error) {
+                    return demoStudentResponses.slice();
+                }
+            }
+            const seeded = demoStudentResponses.slice();
+            localStorage.setItem('cliqueResponses', JSON.stringify(seeded));
+            return seeded;
+        }
+
+        let studentResponses = loadResponses();
+
+        function saveResponses() {
+            localStorage.setItem('cliqueResponses', JSON.stringify(studentResponses));
+        }
+
+        function refreshResponsesFromStorage() {
+            studentResponses = loadResponses();
+        }
+
+        function updateDashboardStats() {
+            refreshResponsesFromStorage();
+            const selectedCount = studentResponses.filter(r => r.selectedTeam && r.selectedTeam.trim() !== '').length;
+            const uniqueMajors = new Set(studentResponses.map(r => r.major).filter(Boolean)).size;
+            const responseEl = document.getElementById('count-responses');
+            const selectedEl = document.getElementById('count-selected-teams');
+            const majorsEl = document.getElementById('count-unique-majors');
+            if (responseEl) responseEl.innerText = studentResponses.length;
+            if (selectedEl) selectedEl.innerText = selectedCount;
+            if (majorsEl) majorsEl.innerText = uniqueMajors;
+        }
 
         let mockTeams = [
             { id: 1, name: 'Team 1', members: 'Emily C: John D', majors: 'Data Science: CS', skills: 'Analysis: Research', roles: 'Tech Lead: PM', avail: 92, comm: 'In Person', work: '1 Day Before', score: 94, status: 'Open' },
@@ -690,7 +746,10 @@ function saveResponses() {
             document.querySelectorAll('.dash-section').forEach(s => s.classList.add('hidden'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById('dash-' + id).classList.remove('hidden');
-            event.target.classList.add('active');
+            const navItems = Array.from(document.querySelectorAll('.nav-item'));
+            const activeItem = navItems.find(item => item.textContent.toLowerCase().includes(id === 'teams' ? 'ai teams' : id));
+            if (activeItem) activeItem.classList.add('active');
+            updateDashboardStats();
             if(id === 'responses') renderResponses();
             if(id === 'teams') renderTeams();
         }
@@ -772,19 +831,56 @@ function saveResponses() {
             document.querySelectorAll('.team-choice-card').forEach(c => c.classList.remove('selected'));
             document.getElementById('team-card-' + id).classList.add('selected');
             document.getElementById('team-card-' + id).querySelector('.status-badge').innerText = "SELECTED BY STUDENT";
-            
-            // Store locally
-            studentResponses.push({
+
+            const selectedSkills = Array.from(document.querySelectorAll('input[name="skill"]:checked'))
+                .map(skill => skill.value)
+                .join(', ') || 'Not selected';
+
+            const selectedRoles = Array.from(document.querySelectorAll('input[name="role"]:checked'))
+                .map(role => role.value)
+                .join(', ') || 'Not selected';
+
+            const selectedAvailability = getSelectedAvailability();
+            const communication = document.getElementById('commPref').value;
+            let platform = 'Not applicable';
+            if (communication === 'Online video meetings') platform = document.getElementById('platform-v').value;
+            if (communication === 'Through text messages') platform = document.getElementById('platform-t').value;
+
+            const response = {
                 name: currentStudent.name,
+                sid: currentStudent.sid,
                 selectedTeam: teamName,
                 major: document.getElementById('major').value,
-                skills: "Various",
-                completion: document.getElementById('completion').value
-            });
+                skills: selectedSkills,
+                roles: selectedRoles,
+                completion: document.getElementById('completion').value,
+                availability: selectedAvailability,
+                communication: communication,
+                platform: platform,
+                consent: 'Yes'
+            };
+
+            studentResponses.push(response);
+            saveResponses();
+            updateDashboardStats();
 
             document.getElementById('confirm-text').innerText = "YOU SELECTED " + teamName;
             document.getElementById('selection-confirmation').classList.remove('hidden');
             window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        function getSelectedAvailability() {
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            const times = ['Morning', 'Afternoon', 'Evening'];
+            const selected = [];
+            document.querySelectorAll('.avail-table tbody tr').forEach((row, rowIndex) => {
+                row.querySelectorAll('.avail-chip').forEach((chip, chipIndex) => {
+                    if (chip.classList.contains('active')) {
+                        selected.push(days[chipIndex] + ' ' + times[rowIndex]);
+                    }
+                });
+            });
+            return selected.length ? selected.join(', ') : 'Not selected';
         }
 
         function requestJoin(id) {
@@ -797,11 +893,13 @@ function saveResponses() {
 
         // --- LECTURER LOGIC ---
         function handleLogin() {
-            const u = document.getElementById('login-user').value;
-            const p = document.getElementById('login-pass').value;
+            const u = document.getElementById('login-user').value.trim();
+            const p = document.getElementById('login-pass').value.trim();
             if(u === 'vaikharikaruna' && p === 'iloveai123') {
+                document.getElementById('login-err').classList.add('hidden');
+                updateDashboardStats();
                 showSection('lecturer-dashboard');
-                document.getElementById('count-responses').innerText = studentResponses.length;
+                showDashSub('overview');
             } else {
                 document.getElementById('login-err').classList.remove('hidden');
             }
@@ -810,20 +908,73 @@ function saveResponses() {
         function logout() { showSection('landing'); }
 
         function renderResponses() {
+            refreshResponsesFromStorage();
+            updateDashboardStats();
             const body = document.getElementById('responses-body');
             const filter = document.getElementById('filter-team').value;
             body.innerHTML = '';
-            studentResponses.forEach(res => {
-                if(filter !== 'all' && res.selectedTeam !== filter) return;
+
+            const filtered = studentResponses.filter(res => filter === 'all' || res.selectedTeam === filter);
+
+            if(filtered.length === 0) {
+                body.innerHTML = `<tr><td colspan="9" style="text-align:center; font-weight:900; padding:25px;">NO STUDENT RESPONSES SUBMITTED YET.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach((res, index) => {
+                const realIndex = studentResponses.indexOf(res);
                 body.innerHTML += `<tr>
-                    <td>${res.name}</td>
-                    <td>${res.major}</td>
-                    <td style="color:var(--red); font-weight:900;">${res.selectedTeam}</td>
-                    <td>${res.skills}</td>
-                    <td>${res.completion}</td>
-                    <td><button class="btn-editorial btn-yellow" style="padding:5px 10px; font-size:0.6rem;">VIEW</button></td>
+                    <td>${escapeHTML(res.name || 'Not provided')}</td>
+                    <td>${escapeHTML(res.sid || 'Not provided')}</td>
+                    <td>${escapeHTML(res.major || 'Not provided')}</td>
+                    <td style="color:var(--red); font-weight:900;">${escapeHTML(res.selectedTeam || 'Not selected')}</td>
+                    <td>${escapeHTML(res.skills || 'Not selected')}</td>
+                    <td>${escapeHTML(res.roles || 'Not selected')}</td>
+                    <td>${escapeHTML(res.completion || 'Not selected')}</td>
+                    <td>${escapeHTML(res.communication || 'Not selected')}</td>
+                    <td><button class="btn-editorial btn-yellow" style="padding:5px 10px; font-size:0.6rem;" onclick="viewResponse(${realIndex})">VIEW</button></td>
                 </tr>`;
             });
+        }
+
+        function viewResponse(index) {
+            refreshResponsesFromStorage();
+            const res = studentResponses[index];
+            if(!res) return;
+            const content = document.getElementById('response-modal-content');
+            content.innerHTML = `
+                <div class="table-container" style="background:white;">
+                    <table>
+                        <tbody>
+                            <tr><th>Full name</th><td>${escapeHTML(res.name || 'Not provided')}</td></tr>
+                            <tr><th>Student ID</th><td>${escapeHTML(res.sid || 'Not provided')}</td></tr>
+                            <tr><th>Major</th><td>${escapeHTML(res.major || 'Not provided')}</td></tr>
+                            <tr><th>Selected team</th><td>${escapeHTML(res.selectedTeam || 'Not selected')}</td></tr>
+                            <tr><th>Selected skills</th><td>${escapeHTML(res.skills || 'Not selected')}</td></tr>
+                            <tr><th>Preferred roles</th><td>${escapeHTML(res.roles || 'Not selected')}</td></tr>
+                            <tr><th>Availability blocks</th><td>${escapeHTML(res.availability || 'Not selected')}</td></tr>
+                            <tr><th>Work timing preference</th><td>${escapeHTML(res.completion || 'Not selected')}</td></tr>
+                            <tr><th>Communication preference</th><td>${escapeHTML(res.communication || 'Not selected')}</td></tr>
+                            <tr><th>Platform preference</th><td>${escapeHTML(res.platform || 'Not applicable')}</td></tr>
+                            <tr><th>Consent status</th><td>${escapeHTML(res.consent || 'Not recorded')}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            document.getElementById('response-modal').classList.remove('hidden');
+        }
+
+        function closeResponseModal() {
+            document.getElementById('response-modal').classList.add('hidden');
+        }
+
+        function escapeHTML(value) {
+            return String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
         }
 
         function renderTeams() {
@@ -848,6 +999,10 @@ function saveResponses() {
             btn.style.background = "var(--blue)";
             document.getElementById('published-body').innerHTML += `<tr><td>TEAM ${num}</td><td>Multiple</td><td>High Alignment</td><td><span style="color:var(--red); font-weight:900;">PUBLISHED</span></td></tr>`;
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDashboardStats();
+        });
     </script>
 </body>
 </html>
