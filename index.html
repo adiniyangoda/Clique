@@ -617,7 +617,7 @@
                     <div class="table-container">
                         <table id="responses-table">
                             <thead>
-                                <tr><th>Name</th><th>Student ID</th><th>Major</th><th>Selected Team</th><th>Skills</th><th>Roles</th><th>Work timing</th><th>Communication</th><th>Action</th></tr>
+                                <tr><th>Name</th><th>Student ID</th><th>Major</th><th>Assigned Team</th><th>Compatibility</th><th>Skills</th><th>Work timing</th><th>Action</th></tr>
                             </thead>
                             <tbody id="responses-body"></tbody>
                         </table>
@@ -841,17 +841,15 @@
 
             const total = studentResponses.length;
             const assigned = studentResponses.filter(res => res.assignedTeam && res.assignedTeam !== 'Pending Lecturer Review').length;
-            const avg = total
-                ? Math.round(studentResponses.reduce((sum, res) => sum + (Number(res.compatibility) || 0), 0) / total)
-                : 0;
+            const uniqueMajors = new Set(studentResponses.map(res => res.major).filter(Boolean)).size;
 
             const totalEl = document.getElementById('count-responses');
-            const assignedEl = document.getElementById('count-assigned');
-            const avgEl = document.getElementById('average-compatibility');
+            const assignedEl = document.getElementById('count-selected-teams');
+            const majorsEl = document.getElementById('count-unique-majors');
 
             if (totalEl) totalEl.innerText = total;
             if (assignedEl) assignedEl.innerText = assigned;
-            if (avgEl) avgEl.innerText = avg + "%";
+            if (majorsEl) majorsEl.innerText = uniqueMajors;
         }
 
         function renderResponses() {
@@ -869,28 +867,37 @@
                 return;
             }
 
-            filtered.forEach((res, index) => {
+            filtered.forEach((res) => {
                 const realIndex = studentResponses.indexOf(res);
                 body.innerHTML += `<tr>
                     <td>${res.name || 'Not provided'}</td>
                     <td>${res.sid || 'Not provided'}</td>
                     <td>${res.major || 'Not provided'}</td>
-                    <td>
-                        <select onchange="assignTeam(${realIndex}, this.value)" style="min-width:150px; padding:8px;">
-                            <option ${res.assignedTeam === 'Pending Lecturer Review' ? 'selected' : ''}>Pending Lecturer Review</option>
-                            <option ${res.assignedTeam === 'Team 1' ? 'selected' : ''}>Team 1</option>
-                            <option ${res.assignedTeam === 'Team 2' ? 'selected' : ''}>Team 2</option>
-                            <option ${res.assignedTeam === 'Team 3' ? 'selected' : ''}>Team 3</option>
-                            <option ${res.assignedTeam === 'Team 4' ? 'selected' : ''}>Team 4</option>
-                            <option ${res.assignedTeam === 'Team 5' ? 'selected' : ''}>Team 5</option>
-                        </select>
-                    </td>
+                    <td style="color:var(--red); font-weight:900;">${res.assignedTeam || 'Pending Lecturer Review'}</td>
                     <td style="color:var(--red); font-weight:900;">${res.compatibility || 0}%</td>
                     <td>${res.skills || 'Not selected'}</td>
                     <td>${res.completion || 'Not selected'}</td>
-                    <td><button class="btn-editorial btn-yellow" style="padding:5px 10px; font-size:0.6rem;" onclick="viewResponse(${realIndex})">VIEW</button></td>
+                    <td style="white-space:nowrap; display:flex; gap:8px; align-items:center;">
+                        <button class="btn-editorial btn-red" style="padding:5px 10px; font-size:0.6rem;" onclick="openAssignPrompt(${realIndex})">ASSIGN</button>
+                        <button class="btn-editorial btn-yellow" style="padding:5px 10px; font-size:0.6rem;" onclick="viewResponse(${realIndex})">VIEW</button>
+                    </td>
                 </tr>`;
             });
+        }
+
+        function openAssignPrompt(index) {
+            const selected = prompt("Assign this student to Team 1, Team 2, Team 3, Team 4, or Team 5", "Team 1");
+            if (!selected) return;
+            const cleanTeam = selected.trim();
+            const validTeams = ['Team 1', 'Team 2', 'Team 3', 'Team 4', 'Team 5'];
+            if (!validTeams.includes(cleanTeam)) {
+                alert("Please enter Team 1, Team 2, Team 3, Team 4, or Team 5.");
+                return;
+            }
+            assignTeam(index, cleanTeam);
+            renderResponses();
+            renderTeams();
+            alert("Student assigned to " + cleanTeam + ".");
         }
 
         function assignTeam(index, teamName) {
@@ -931,22 +938,44 @@
 
         function renderTeams() {
             refreshResponsesFromStorage();
+            updateDashboardStats();
             const container = document.getElementById('recommended-teams-container');
             container.innerHTML = '';
 
-            if (studentResponses.length === 0) {
-                container.innerHTML = `<div class="team-card"><h2 style="font-weight:900;">NO STUDENT DATA YET</h2><p>Team recommendations will appear after students submit preferences.</p></div>`;
+            const assigned = studentResponses.filter(res => res.assignedTeam && res.assignedTeam !== 'Pending Lecturer Review');
+
+            if (assigned.length === 0) {
+                container.innerHTML = `<div class="team-card"><h2 style="font-weight:900;">NO FORMED TEAMS YET</h2><p>Use the Assign button in the Responses tab to place students into teams.</p></div>`;
                 return;
             }
 
-            mockTeams.forEach(t => {
+            const teams = ['Team 1', 'Team 2', 'Team 3', 'Team 4', 'Team 5'];
+            teams.forEach(teamName => {
+                const members = assigned.filter(res => res.assignedTeam === teamName);
+                if (members.length === 0) return;
+
+                const avgCompatibility = Math.round(
+                    members.reduce((sum, res) => sum + (Number(res.compatibility) || 0), 0) / members.length
+                );
+
+                const memberRows = members.map(res => `
+                    <tr>
+                        <td>${res.name || 'Not provided'}</td>
+                        <td>${res.sid || 'Not provided'}</td>
+                    </tr>
+                `).join('');
+
                 container.innerHTML += `
                     <div class="team-card fade-in">
-                        <h2 style="font-weight:900; text-transform: uppercase;">${t.name}</h2>
-                        <p style="font-size:0.85rem; font-weight:800; text-transform: uppercase; color: var(--grey); margin: 10px 0;">${t.focus}</p>
-                        <p style="font-weight:900; color:var(--yellow); margin-top:12px;">COMPATIBILITY ESTIMATE: ${t.score}%</p>
-                        <div class="score-bar"><div class="score-fill" style="width:${t.score}%"></div></div>
-                        <p style="font-size:0.8rem; color:var(--grey); margin-top:12px;">Lecturer can assign students from the Responses tab.</p>
+                        <h2 style="font-weight:900; text-transform: uppercase; margin-bottom:10px;">${teamName}</h2>
+                        <p style="font-weight:900; color:var(--yellow); margin-bottom:14px;">COMPATIBILITY: ${avgCompatibility}%</p>
+                        <div class="score-bar"><div class="score-fill" style="width:${avgCompatibility}%"></div></div>
+                        <div class="table-container" style="margin-top:18px;">
+                            <table>
+                                <thead><tr><th>Student Name</th><th>Student ID</th></tr></thead>
+                                <tbody>${memberRows}</tbody>
+                            </table>
+                        </div>
                     </div>`;
             });
         }
@@ -967,7 +996,7 @@
             assigned.forEach(res => {
                 body.innerHTML += `<tr>
                     <td>${res.assignedTeam}</td>
-                    <td>${res.name}</td>
+                    <td>${res.name} (${res.sid || 'No ID'})</td>
                     <td>${res.compatibility || 0}%</td>
                     <td><span style="color:var(--red); font-weight:900;">ASSIGNED</span></td>
                 </tr>`;
