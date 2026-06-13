@@ -478,7 +478,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Work Timing Preference</label>
+                        <label>Submission Preference</label>
                         <select id="completion">
                             <option>SAME DAY AS DEADLINE</option>
                             <option>1 DAY BEFORE</option>
@@ -504,7 +504,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Comm. Preference</label>
+                        <label>Communication Preference</label>
                         <select id="commPref" onchange="toggleCommOptions()">
                             <option value="In person">IN PERSON</option>
                             <option value="Online video meetings">VIDEO MEETINGS</option>
@@ -577,9 +577,17 @@
         <div class="editorial-panel" style="width:400px; margin: 100px auto;">
             <h2 style="text-align:center; font-weight:900; margin-bottom:20px;">LECTURER LOGIN</h2>
             <label>User</label>
-            <input type="text" id="login-user" value="vaikharikaruna" style="margin-bottom:15px;">
+            <input type="text"
+       id="login-user"
+       placeholder="Enter username"
+       autocomplete="off"
+       style="margin-bottom:15px;">
             <label>Password</label>
-            <input type="password" id="login-pass" value="iloveai123" style="margin-bottom:25px;">
+            <input type="password"
+       id="login-pass"
+       placeholder="Enter password"
+       autocomplete="off"
+       style="margin-bottom:25px;">
             <button class="btn-editorial btn-red" style="width:100%;" onclick="handleLogin()">ENTER DASHBOARD</button>
             <p id="login-err" class="hidden" style="color:var(--red); font-weight:900; margin-top:10px;">DENIED.</p>
         </div>
@@ -653,10 +661,11 @@
     <script>
         // --- DATA ---
         let studentResponses = [
-            {name: 'SARAH MILLER', major: 'SOFTWARE ENG', selectedTeam: 'Team 1', skills: 'Coding, UI', completion: '1 WEEK BEFORE'},
-            {name: 'JAMES TAN', major: 'BUSINESS', selectedTeam: 'Team 2', skills: 'Leadership', completion: '3 DAYS BEFORE'},
-            {name: 'EMILY CHEN', major: 'DATA SCIENCE', selectedTeam: 'Team 1', skills: 'Analysis', completion: '3 DAYS BEFORE'},
-            {name: 'MICHAEL ROSS', major: 'ANIMATION', selectedTeam: 'Random', skills: 'Design', completion: '1 DAY BEFORE'}
+let studentResponses = JSON.parse(localStorage.getItem("cliqueResponses")) || [];
+
+function saveResponses() {
+    localStorage.setItem("cliqueResponses", JSON.stringify(studentResponses));
+}
         ];
 
         let mockTeams = [
